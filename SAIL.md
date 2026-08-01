@@ -1,9 +1,10 @@
-# ps-dispatch — Sail integration
+# ps-dispatch â€” Sail integration
 
 Vendored copy of [Project-Sloth/ps-dispatch](https://github.com/Project-Sloth/ps-dispatch) with a Sail client shim.
 
 | Field | Value |
 |-------|--------|
+| Sail fork | https://github.com/Sytrookie/ps-dispatch |
 | Upstream | https://github.com/Project-Sloth/ps-dispatch |
 | Monorepo path | `system_resources/[core]/ps-dispatch` |
 | License | **GPL-3.0** (see `LICENSE`) |
@@ -20,7 +21,7 @@ Vendored copy of [Project-Sloth/ps-dispatch](https://github.com/Project-Sloth/ps
 ## Config notes
 
 - `Config.Jobs` uses job **types** `leo` / `ems` (Sail bridge sets `job.type` from police/ambulance names).
-- `Config.OnDutyOnly = true` — requires `sail_jobs` clock-in.
+- `Config.OnDutyOnly = true` â€” requires `sail_jobs` clock-in.
 - Phone for 911: ox_inventory item `phone` (adjust `Config.PhoneItems` to match Sail).
 
 ## Upstream merge
