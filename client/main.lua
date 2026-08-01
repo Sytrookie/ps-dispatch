@@ -319,23 +319,71 @@ RegisterNetEvent('ps-dispatch:client:openMenu', function(data)
     end
 end)
 
--- EventHandlers
+local function clearAlertBlips()
+    for _, blip in pairs(blips) do
+        if blip and DoesBlipExist(blip) then
+            RemoveBlip(blip)
+        end
+    end
+    for _, blip in pairs(radius2) do
+        if blip and DoesBlipExist(blip) then
+            RemoveBlip(blip)
+        end
+    end
+    blips, radius2 = {}, {}
+end
+
+local function rehydrateCallsUi()
+    local ok, data = pcall(function()
+        return lib.callback.await('ps-dispatch:callback:getCalls', false)
+    end)
+    if ok and type(data) == 'table' then
+        SendNUIMessage({ action = 'setDispatchs', data = data })
+    end
+end
+
+local function fullClientBoot()
+    setupDispatch()
+    removeZones()
+    createZones()
+    rehydrateCallsUi()
+end
+
+-- EventHandlers (QBCore names kept for stock UI paths; Sail also boots on resource start)
 RegisterNetEvent("QBCore:Client:OnJobUpdate", setupDispatch)
 
 AddEventHandler('QBCore:Client:OnPlayerLoaded', function()
-    setupDispatch()
-    createZones()
+    fullClientBoot()
 end)
 
-AddEventHandler('QBCore:Client:OnPlayerUnload', removeZones)
+AddEventHandler('QBCore:Client:OnPlayerUnload', function()
+    removeZones()
+    clearAlertBlips()
+    toggleUI(false)
+end)
+
+-- Sail: character session is ready when state bags populate (no QBCore load event).
+AddEventHandler('sail:characterLoaded', function()
+    fullClientBoot()
+end)
+
+RegisterNetEvent('sail_jobs:sync', function()
+    setupDispatch()
+end)
 
 AddEventHandler('onResourceStart', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
-    setupDispatch()
+    -- Mid-session restart: already-online officers never get QBCore:OnPlayerLoaded.
+    CreateThread(function()
+        Wait(500)
+        fullClientBoot()
+    end)
 end)
 
 AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
+    toggleUI(false)
+    clearAlertBlips()
     removeZones()
 end)
 

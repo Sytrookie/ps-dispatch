@@ -6,6 +6,10 @@ local JOB_TYPES = {
     ambulance = 'ems',
 }
 
+---Client-local only (strict state bags: no client bag writes).
+local cachedCallsign = nil
+local callsignForCid = nil
+
 local function buildPlayerData()
     local cid = LocalPlayer.state.sailCharacterId
     local jobName = tostring(LocalPlayer.state.sailJob or 'unemployed')
@@ -62,7 +66,7 @@ local function buildPlayerData()
             },
         },
         metadata = {
-            callsign = nil,
+            callsign = cachedCallsign,
             ishandcuffed = false,
             isdead = stage == 'dead' or stage == 'bleedout',
             inlaststand = stage == 'down',
@@ -71,6 +75,25 @@ local function buildPlayerData()
 end
 
 PlayerData = buildPlayerData()
+
+---Pull callsign from server (mdt_profiles / players.metadata) once character is ready.
+CreateThread(function()
+    while true do
+        local cid = LocalPlayer.state.sailCharacterId
+        if cid and tostring(cid) ~= tostring(callsignForCid or '') then
+            callsignForCid = cid
+            cachedCallsign = nil
+            local ok, sign = pcall(function()
+                return lib.callback.await('ps-dispatch:callback:getCallsign', false)
+            end)
+            if ok and sign and sign ~= '' then
+                cachedCallsign = tostring(sign)
+            end
+            PlayerData = buildPlayerData()
+        end
+        Wait(3000)
+    end
+end)
 
 QBCore = {
     Functions = {
